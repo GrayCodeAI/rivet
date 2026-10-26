@@ -30,4 +30,4 @@ Rivet does not auto-rewrite shell commands or install hooks. It only runs when c
 
 ## GrayCode boundary
 
-Reflect's `work` flow can call Rivet for verification and compact results with `--rivet-bin`, or verify and run a committed block with `--verify-block`. Term can display Rivet's JSON block status and raw logs. Relay continues to own model routing and token accounting. Term integration is not wired yet.
+Reflect's `work` flow can call Rivet for verification and compact results with `--rivet-bin`, or verify and run a committed block with `--verify-block`. Ridge can display Rivet's JSON block status and raw logs. Relay continues to own model routing and token accounting. Ridge integration is not wired yet.
