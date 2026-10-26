@@ -25,14 +25,20 @@ func (s Store) Execute(ctx context.Context, cmd *exec.Cmd, maxLines int) (Result
 	if maxLines < 2 {
 		return Result{}, errors.New("max-lines must be at least 2")
 	}
-	if err := s.Init(); err != nil {
+	logDir := s.LogDir
+	if logDir == "" {
+		if err := s.Init(); err != nil {
+			return Result{}, err
+		}
+		base, err := s.Base()
+		if err != nil {
+			return Result{}, err
+		}
+		logDir = filepath.Join(base, "logs")
+	} else if err := os.MkdirAll(logDir, 0700); err != nil {
 		return Result{}, err
 	}
-	base, err := s.Base()
-	if err != nil {
-		return Result{}, err
-	}
-	log, err := os.CreateTemp(filepath.Join(base, "logs"), "run-*.log")
+	log, err := os.CreateTemp(logDir, "run-*.log")
 	if err != nil {
 		return Result{}, err
 	}

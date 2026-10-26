@@ -99,6 +99,25 @@ func TestExecuteFailureKeepsFullLogAndExitCode(t *testing.T) {
 	}
 }
 
+func TestExecuteExternalLogDirKeepsProjectUntouched(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("POSIX shell")
+	}
+	project := t.TempDir()
+	logDir := filepath.Join(t.TempDir(), "logs")
+	s := Store{Project: project, LogDir: logDir}
+	result, err := s.Execute(context.Background(), exec.Command("sh", "-c", "printf 'ok\\n'"), 4)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if result.Summary != "ok" || filepath.Dir(result.LogPath) != logDir {
+		t.Fatalf("result: %+v", result)
+	}
+	if _, err := os.Stat(filepath.Join(project, ".rivet")); !errors.Is(err, os.ErrNotExist) {
+		t.Fatal("external log run changed project")
+	}
+}
+
 func TestSummarizeGoTest(t *testing.T) {
 	input := "noise 1\nnoise 2\nnoise 3\nnoise 4\nok  \tmodule/pkg  1s\n"
 	summary, lines, err := Summarize(strings.NewReader(input), []string{"go", "test", "./..."}, 0, 2)

@@ -19,12 +19,12 @@ Usage:
   rivet init [--project DIR]
   rivet add [--project DIR] --description TEXT --script FILE --check FILE NAME
   rivet verify [--project DIR] [--timeout DURATION] NAME
-  rivet run [--project DIR] [--max-lines N] NAME [ARG...]
-  rivet exec [--project DIR] [--max-lines N] -- COMMAND [ARG...]
+  rivet run [--project DIR] [--log-dir DIR] [--max-lines N] [--json] NAME [ARG...]
+  rivet exec [--project DIR] [--log-dir DIR] [--max-lines N] [--json] -- COMMAND [ARG...]
   rivet list [--project DIR]
   rivet show [--project DIR] NAME
 
-The complete output of run and exec is saved under .rivet/logs/.
+The complete output of run and exec is saved under .rivet/logs/ unless --log-dir is set.
 `
 
 func main() { os.Exit(run(os.Args[1:])) }
@@ -45,6 +45,8 @@ func run(argv []string) int {
 	var description, script, check *string
 	var timeout *time.Duration
 	var maxLines *int
+	var logDir *string
+	var jsonOutput *bool
 	switch command {
 	case "add":
 		description = fs.String("description", "", "block description")
@@ -54,6 +56,8 @@ func run(argv []string) int {
 		timeout = fs.Duration("timeout", 2*time.Minute, "verification timeout")
 	case "run", "exec":
 		maxLines = fs.Int("max-lines", 24, "maximum visible output lines")
+		logDir = fs.String("log-dir", "", "directory for complete local logs")
+		jsonOutput = fs.Bool("json", false, "print structured result for tools")
 	case "init", "list", "show":
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command %q\n%s", command, usage)
@@ -64,6 +68,9 @@ func run(argv []string) int {
 	}
 	args := fs.Args()
 	s := rivet.Store{Project: *project}
+	if logDir != nil {
+		s.LogDir = *logDir
+	}
 	var err error
 	switch command {
 	case "init":
@@ -99,7 +106,7 @@ func run(argv []string) int {
 		var cmd *exec.Cmd
 		cmd, err = s.BlockCommand(context.Background(), args[0], args[1:])
 		if err == nil {
-			return execute(s, cmd, *maxLines)
+			return execute(s, cmd, *maxLines, *jsonOutput)
 		}
 	case "exec":
 		if len(args) < 1 {
@@ -112,7 +119,7 @@ func run(argv []string) int {
 		}
 		cmd := exec.CommandContext(context.Background(), args[0], args[1:]...)
 		cmd.Dir = root
-		return execute(s, cmd, *maxLines)
+		return execute(s, cmd, *maxLines, *jsonOutput)
 	case "list":
 		if len(args) != 0 {
 			return badArgs()
@@ -139,11 +146,18 @@ func run(argv []string) int {
 	return 0
 }
 
-func execute(s rivet.Store, cmd *exec.Cmd, maxLines int) int {
+func execute(s rivet.Store, cmd *exec.Cmd, maxLines int, jsonOutput bool) int {
 	result, err := s.Execute(context.Background(), cmd, maxLines)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "rivet:", err)
 		return 1
+	}
+	if jsonOutput {
+		if err := json.NewEncoder(os.Stdout).Encode(result); err != nil {
+			fmt.Fprintln(os.Stderr, "rivet:", err)
+			return 1
+		}
+		return result.ExitCode
 	}
 	if strings.TrimSpace(result.Summary) != "" {
 		fmt.Println(result.Summary)

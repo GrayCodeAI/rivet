@@ -38,7 +38,10 @@ type receipt struct {
 	CheckedAt time.Time `json:"checked_at"`
 }
 
-type Store struct{ Project string }
+type Store struct {
+	Project string
+	LogDir  string
+}
 
 func (s Store) Root() (string, error) {
 	root, err := filepath.Abs(s.Project)

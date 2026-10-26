@@ -22,7 +22,7 @@ go build -o rivet ./cmd/rivet
 ./rivet list --project /path/to/project
 ```
 
-`add` copies the script and check. The check receives `RIVET_SCRIPT` and `RIVET_PROJECT_ROOT` and must exit zero. `run` passes arguments as literal argument values and runs from the project root. `exec` also runs from the project root. Both write combined stdout and stderr to a private local log and return its path; `--max-lines` controls the visible line count. Long lines are truncated in the summary, but retained in the log. A successful `go test` run with long output gets a package count; other long output keeps its first and last lines. `list` and `show` return JSON for other GrayCode tools.
+`add` copies the script and check. The check receives `RIVET_SCRIPT` and `RIVET_PROJECT_ROOT` and must exit zero. `run` passes arguments as literal argument values and runs from the project root. `exec` also runs from the project root. Both write combined stdout and stderr to a private local log and return its path; `--max-lines` controls the visible line count. Use `--log-dir` to keep logs outside a clean worktree. `--json` returns a structured result for Reflect and other tools. Long lines are truncated in the summary, but retained in the log. A successful `go test` run with long output gets a package count; other long output keeps its first and last lines. `list` and `show` return JSON for other GrayCode tools.
 
 Commit `.rivet/blocks/` and `.rivet/.gitignore` with a project. Verification receipts and logs stay local. Reverify after changes or when external dependencies need a fresh check.
 
@@ -30,4 +30,4 @@ Rivet does not auto-rewrite shell commands or install hooks. It only runs when c
 
 ## GrayCode boundary
 
-Reflect can call Rivet for repeated tasks and compact tool results. Term can display its JSON block status and raw logs. Relay continues to own model routing and token accounting. These integrations are not wired yet.
+Reflect's `work` flow can call Rivet for verification and compact results with `--rivet-bin`, or verify and run a committed block with `--verify-block`. Term can display Rivet's JSON block status and raw logs. Relay continues to own model routing and token accounting. Term integration is not wired yet.
